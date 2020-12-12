@@ -7,15 +7,17 @@ const char MINUS_SIGN = '-';
 const int ZERO_ASCII_POSITION = 48;
 const int NINE_ASCII_POSITION = ZERO_ASCII_POSITION + 9;
 
-int extractNextInt(string * inputPointer, char delimiter) {
+int extractNextInt(string * inputPointer, int * startIndex, int * maxReadSize, char delimiter) {
     bool hasMetFirstInteger = false, isNegative = false;
     int value = INT32_MAX;
     int initialValue, actualValue;
 
-    while (!inputPointer->empty()) {
-        string inputValue = *inputPointer;
-        unsigned char currentChar = inputValue[0];
-        inputPointer->erase(0, 1);
+    int readSize = *maxReadSize;
+    while (readSize > 0) {
+        unsigned char currentChar = (*inputPointer)[*startIndex];
+
+        (*startIndex)++;
+        readSize = (*maxReadSize)--;
 
         if (currentChar == delimiter && hasMetFirstInteger) break;
         else if (currentChar == MINUS_SIGN) {
@@ -45,8 +47,11 @@ int main() {
     string input;
     getline(cin, input);
 
+    int maxReadSize = input.length();
+    int startReadIndex = 0;
+
     int inputInteger;
-    while ((inputInteger = extractNextInt(&input, INPUT_SEPARATOR)) != INT32_MAX) {
-        cout << inputInteger << '\n';
+    while ((inputInteger = extractNextInt(&input, &startReadIndex, &maxReadSize, INPUT_SEPARATOR)) != INT32_MAX) {
+        cout << inputInteger << ' ';
     }
 }
