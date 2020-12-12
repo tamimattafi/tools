@@ -22,7 +22,6 @@ int extractNextInt(string * inputPointer, int * startIndex, int * maxReadSize, c
         if (currentChar == delimiter && hasMetFirstInteger) break;
         else if (currentChar == MINUS_SIGN) {
             isNegative = true;
-            continue;
         } else {
             initialValue = (int) currentChar;
             if (initialValue >= ZERO_ASCII_POSITION && initialValue <= NINE_ASCII_POSITION) {
@@ -30,12 +29,10 @@ int extractNextInt(string * inputPointer, int * startIndex, int * maxReadSize, c
                 if (value == INT32_MAX) {
                     value = actualValue;
                     hasMetFirstInteger = true;
-                    continue;
                 } else {
                     value = value * 10 + actualValue;
-                    continue;
                 }
-            } else continue;
+            }
         }
     }
 
