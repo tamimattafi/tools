@@ -1,4 +1,4 @@
-package com.attafitamim.tools
+package org.chateos.tezro.ui.activities.global
 
 import android.app.Activity
 import android.app.Application
@@ -12,18 +12,27 @@ import org.chateos.tezro.ui.activities.global.ActivityLifeCycleHandler.ActivityS
 import org.chateos.tezro.ui.activities.global.ActivityLifeCycleHandler.ActivityState.Companion.STARTED
 import org.chateos.tezro.ui.activities.global.ActivityLifeCycleHandler.ActivityState.Companion.STOPPED
 import org.chateos.tezro.ui.activities.global.ActivityLifeCycleHandler.ActivityState.Companion.UNKNOWN
+import java.lang.ref.WeakReference
 
-class ActivityLifeCycleHandler<T: Activity> : Application.ActivityLifecycleCallbacks {
+open class ActivityLifeCycleHandler<T: Activity> : Application.ActivityLifecycleCallbacks {
 
     @ActivityState
-    var currentState: Int = UNKNOWN
-    private set(newState) {
+    open var currentState: Int = UNKNOWN
+    protected set(newState) {
         field = newState
         this.notifyStateListeners(newState)
     }
+    
+    protected open var activityWeakReference = WeakReference<T>(null)
+    open var currentReference 
+        get() = activityWeakReference.get()
+        protected set(newReference) {
+            if (newReference == null) activityWeakReference.clear()
+            else activityWeakReference = WeakReference(newReference)
+        }
 
-    private val stateListeners = ArrayList<(newState: Int) -> Unit>()
-    private val specificStateListeners = HashMap<Int, ArrayList<() -> Unit>>()
+    protected open val stateListeners = ArrayList<(newState: Int) -> Unit>()
+    protected open val specificStateListeners = HashMap<Int, ArrayList<() -> Unit>>()
 
     override fun onActivityPaused(activity: Activity) {
         this.tryChangeActivityState(activity, PAUSED)
@@ -53,43 +62,44 @@ class ActivityLifeCycleHandler<T: Activity> : Application.ActivityLifecycleCallb
         this.tryChangeActivityState(activity, RESUMED)
     }
 
-    fun addStateChangeListener(listener: (newState: Int) -> Unit) {
+    open fun addStateChangeListener(listener: (newState: Int) -> Unit) {
         this.stateListeners.add(listener)
     }
 
-    fun removeStateChageListener(listener: (newState: Int) -> Unit) {
+    open fun removeStateChageListener(listener: (newState: Int) -> Unit) {
         this.stateListeners.remove(listener)
     }
 
-    fun addSpecificStateChangeListener(@ActivityState state: Int, listener: () -> Unit) {
+    open fun addSpecificStateChangeListener(@ActivityState state: Int, listener: () -> Unit) {
         this.initSpecificListenersArray(state)
         specificStateListeners[state]!!.add(listener)
     }
 
-    fun removeSpecificStateChageListener(@ActivityState state: Int, listener: () -> Unit) {
+    open fun removeSpecificStateChangeListener(@ActivityState state: Int, listener: () -> Unit) {
         this.initSpecificListenersArray(state)
         specificStateListeners[state]!!.remove(listener)
     }
 
-    fun releaseListeners() {
+    open fun releaseListeners() {
         this.stateListeners.clear()
         this.specificStateListeners.clear()
     }
 
     @Suppress("UNCHECKED_CAST")
-    private fun tryChangeActivityState(activity: Activity, @ActivityState state: Int) {
+    protected open fun tryChangeActivityState(activity: Activity, @ActivityState state: Int) {
         val myActivity = activity as? T ?: return
+        this.currentReference = myActivity
         this.currentState = state
     }
 
-    private fun notifyStateListeners(newState: Int) {
+    protected open fun notifyStateListeners(newState: Int) {
         this.stateListeners.forEach { listener -> listener.invoke(newState) }
 
         val specificStateListeners = this.specificStateListeners[newState]
         specificStateListeners?.forEach { listener -> listener.invoke() }
     }
 
-    private fun initSpecificListenersArray(@ActivityState state: Int) {
+    protected open fun initSpecificListenersArray(@ActivityState state: Int) {
         if (this.specificStateListeners[state] == null) {
             this.specificStateListeners[state] = ArrayList()
         }
